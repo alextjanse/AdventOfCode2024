@@ -9,7 +9,7 @@ for rule in ordering_rules:
     
     predecessor_rules[succ].add(pred)
 
-def check_update_procedure(procedure: list[int]) -> bool:
+def check_procedure(procedure: list[int]) -> bool:
     global predecessor_rules
     
     invalid_successors = set()
@@ -28,17 +28,42 @@ invalid_procedures = list()
 for line in update_procedures:
     procedure = [int(s) for s in line.split(',')]
 
-    if check_update_procedure(procedure):
+    if check_procedure(procedure):
         middle_sum += procedure[len(procedure) // 2]
     else:
         invalid_procedures.append(procedure)
 
 print(middle_sum)
 
-def fix_procedure(procedure: list[int]) -> None:
+def fix_procedure_iterate(procedure: list[int]) -> bool:
     global predecessor_rules
 
     invalid_successors = dict()
 
     for (index, page) in enumerate(procedure):
-        if page in invalid_successors.keys():
+        if page in invalid_successors:
+            swap_index = invalid_successors[page]
+            swap_value = procedure[swap_index]
+            procedure[swap_index] = page
+            procedure[index] = swap_value
+
+            return False
+
+        for pred in predecessor_rules[page]:
+            if pred not in invalid_successors:
+                invalid_successors[pred] = index
+
+    return True
+
+def fix_procedure(procedure: list[int]) -> None:
+    while not fix_procedure_iterate(procedure):
+        pass
+
+middle_sum = 0
+
+for procedure in invalid_procedures:
+    fix_procedure(procedure)
+
+    middle_sum += procedure[len(procedure) // 2]
+
+print(middle_sum)
