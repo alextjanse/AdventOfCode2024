@@ -4,7 +4,7 @@ def get_data() -> list[int | None]:
     '''Read the data and put it in a list. Each entry contains the
     id of the file or either None if the register is empty.'''
     file = open('data/day9.txt').read().rstrip()
-    data = []
+    disk = []
 
     number = True
     id = 0
@@ -13,14 +13,14 @@ def get_data() -> list[int | None]:
         i = int(c)
         
         if number:
-            data += [id] * i
+            disk += [id] * i
             id += 1
         else:
-            data += [None] * i
+            disk += [None] * i
         
         number = not number
     
-    return data[:]
+    return disk[:]
 
 def solve_part_1(disk: list[int | None]) -> int:
     '''Solve part one by following to index, one from the start and
@@ -59,22 +59,20 @@ def solve_part_2(disk: list[int | None]) -> int:
     
     max_id = len(files) - 1
 
-    for id in range(max_id, -1, -1):
-        size = files[id]
+    for file_id in range(max_id, -1, -1):
+        size = files[file_id]
 
-        for i in range(len(disk)):
-            if disk[i] == id:
+        for i, v in enumerate(disk):
+            if v == file_id:
                 # We have struck the current file location
                 break
             elif all(map(lambda d: d is None, disk[i: i + size])):
                 # Remove the file from its original location
-                for j in range(len(disk)):
-                    if disk[j] == id:
-                        disk[j] = None
+                disk = [None if d == file_id else d for d in disk]
                 
                 # Place the file at the new location
                 for j in range(i, i + size):
-                    disk[j] = id
+                    disk[j] = file_id
                 
                 break
 
