@@ -1,4 +1,4 @@
-def get_data():
+def get_data() -> tuple[int, int, int, int, int, int]:
     with open('data/day13.txt', encoding='utf-8') as file:
         raw_data = file.read()
     
@@ -10,6 +10,7 @@ def get_data():
         a11 = int(a11[2:-1])
         a12 = int(a12[2:])
         a21 = int(a21[2:-1])
+        a22 = int(a22[2:])
         b1 = int(b1[2:-1])
         b2 = int(b2[2:])
 
@@ -17,33 +18,40 @@ def get_data():
     
     return machine_info
 
-def dot(v1: tuple[int, int, int], v2: tuple[int, int, int]) -> tuple[int, int, int]:
-    return tuple(map(lambda x: x[0] * x[1], zip(v1, v2)))
-
-def cross(v1: tuple[int, int, int], v2: tuple[int, int, int]) -> tuple[int, int, int]:
-    (x1, y1, z1) = v1
-    (x2, y2, z2) = v2
-    return (y1 * z2 - z1 * y2, z1 * x2 - x1 * z2, x1 * y2 - y1 * x2)
-
-def solve_part_1(machine_info):
-    '''Solve part one by solving plane-line intersections in 3D. The points on
-    the plane are the reachable amounts by pressing button A and B. The z-axis
-    represents the total cost. The line is the target: (b1, b2, 0) + d*(0, 0, 1).
-    For more info:
-    https://en.wikipedia.org/wiki/Line%E2%80%93plane_intersection#Algebraic_form'''
+def solve(machine_info: list[tuple[int, int, int, int, int, int]], target_offset = 0) -> None:
+    '''Solve part one by solving plane-line intersections in 3D.'''
     total_cost = 0
 
     for (a11, a12, a21, a22, b1, b2) in machine_info:
-        v1 = (a11, a12, 3)
-        v2 = (a21, a22, 1)
+        '''The solution plane has base vectors v=(a11, a12, 3) and w=(a21, a22, 1).
+        Going one step into direction v corresponds to pressing Button A once and vice
+        versa for w with Button B. The target (b1, b2) becomes a line with base (b1, b2, 0)
+        and direction (0, 0, 1). The plane and line intersect at P=(b1, b2, c), where c is the
+        cost of reaching the target. If the plane and line are not parallel, then the solution
+        is unique.
+        There is one problem: we can only do full steps of v and w. We can check this by breaking
+        up P into P=i*v + j*w for some i and j, and check if i and j are integer numbers.
+        For more info on the calculations:
+        https://en.wikipedia.org/wiki/Line%E2%80%93plane_intersection#Parametric_form
+        '''
+        b1 += target_offset
+        b2 += target_offset
 
-        n = cross(v1, v2)
+        det = a11 * a22 - a21 * a12
+
+        if det == 0:
+            # Parallel: no solution
+            continue
  
-        cost = dot((-b1, -b2, 0), n) / dot((0, 0, 1), n)
+        i = (b1 * a22 - b2 * a21) / det
+        j = (b2 * a11 - b1 * a12) / det 
 
-        total_cost += cost
+        if i.is_integer() and j.is_integer():
+            total_cost += int(3 * i + j)
 
     print(total_cost)
 
 if __name__ == '__main__':
     machine_info = get_data()
+    solve(machine_info)
+    solve(machine_info, 10000000000000)
