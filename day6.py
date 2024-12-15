@@ -16,7 +16,7 @@ def find_guard() -> tuple[int, int]:
     
     raise Exception('Start point not found.')
 
-def count_steps() -> int:
+def get_visited_coords() -> set[tuple[int, int]]:
     '''Count the number of steps the guard takes.'''
     global field, width, height
 
@@ -31,7 +31,7 @@ def count_steps() -> int:
         
         if not (0 <= x + dx < width and 0 <= y + dy < height):
             # Guard is out of bounds, return # of visited coords
-            return len(visited_coords)
+            return visited_coords
         elif field[y + dy][x + dx] == '#':
             # Obstruction: turn right
             (dx, dy) = (-dy, dx)
@@ -39,7 +39,8 @@ def count_steps() -> int:
             # No obstruction: set a step forward
             (x, y) = (x + dx, y + dy)
         
-print(count_steps())
+normal_route = get_visited_coords()
+print(len(normal_route))
 
 def check_for_loop() -> bool:
     '''Check if the guard walks in a loop.'''
@@ -71,15 +72,14 @@ def check_for_loop() -> bool:
 
 possible_obstructions = 0
 
-# Brute-force all possible obstruction locations
-for y in range(0, height):
-    for x in range(0, width):
-        if field[y][x] == '.':
-            field[y][x] = '#'
-            
-            if check_for_loop():
-                possible_obstructions += 1
-            
-            field[y][x] = '.'
+# Check for every step on the normal path if obstructing it would result in a loop
+for (x, y) in normal_route:
+    if field[y][x] == '.':
+        field[y][x] = '#'
+        
+        if check_for_loop():
+            possible_obstructions += 1
+        
+        field[y][x] = '.'
 
 print(possible_obstructions)
