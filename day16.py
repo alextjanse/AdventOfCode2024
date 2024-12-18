@@ -42,10 +42,13 @@ def get_manhattan_distance(p: tuple[int, int], q: tuple[int, int]) -> int:
     return abs(p[0] - q[0]) + abs(p[1] - q[1])
 
 def solve(maze: Maze) -> int:
+    '''Solve the maze with Dijkstra.'''
     start, end = find_start_and_end(maze)
 
+    # Distance dictionary containing the shortest distance to a position and direction combo
     distances: dict[tuple[tuple[int, int], tuple[int, int]], int] = dict()
 
+    # list with cost, position, direction, and list of visited positions
     unhandled_states: list[tuple[int, tuple[int, int], tuple[int, int], list[tuple[int, int]]]] = [
         (0, start, (1, 0), [start]),
     ]
@@ -54,16 +57,20 @@ def solve(maze: Maze) -> int:
     best_paths_visited_positions = set()
 
     while unhandled_states:
+        # Pop the shortest route
         cost, position, direction, path = heappop(unhandled_states)
 
+        # Check if the position has been handled yet
         if (position, direction) in distances and cost > distances[position, direction]:
             continue
         distances[position, direction] = cost
 
+        # Check if we've reached the end
         if position == end and cost <= best_cost:
             best_paths_visited_positions.update(path)
             best_cost = cost
         
+        # Add neighbours to unhandled states
         px, py = position
         dx, dy = direction
         for c, dx, dy in [(1, dx, dy), (1001, -dy, dx), (1001, dy, -dx)]:
