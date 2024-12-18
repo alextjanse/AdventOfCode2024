@@ -1,3 +1,6 @@
+from typing import Iterator
+
+
 def get_data() -> tuple[int, int, int, list[int]]:
     with open('data/day17.txt', encoding='utf-8') as file:
         lines = file.read().splitlines()
@@ -55,9 +58,11 @@ def solve_part_1() -> None:
 
     print(','.join(map(str, output)))
 
-def run_and_check_program(a, b, c, program) -> bool:
+def run_and_check_program(a, b, c, program, depth) -> bool:
     pointer = 0
     output = []
+
+    expected_output = program[-depth:]
     
     while pointer < len(program):
         try:
@@ -79,7 +84,7 @@ def run_and_check_program(a, b, c, program) -> bool:
             elif opcode == 5: # out
                 x = get_combo_operand(operand, a, b, c) % 8
 
-                if program[len(output)] != x:
+                if expected_output[len(output)] != x:
                     return False
                 
                 output.append(x)
@@ -94,14 +99,26 @@ def run_and_check_program(a, b, c, program) -> bool:
         except:
             return False
     
-    return len(output) == len(program)
+    return len(output) == len(expected_output)
+
+def find_a(current_a, program, depth) -> Iterator[int]:
+    if depth == len(program):
+        # Max depth, check if the current_a is correct
+        return current_a if run_and_check_program(current_a, 0, 0, program, depth) else None
+
+    for a_tail in range(8):
+        a = (current_a << 3) | a_tail
+        if run_and_check_program(a, 0, 0, program, depth):
+            result = find_a(a, program, depth + 1)
+            if result is not None:
+                return result
+    
+    return None
 
 def solve_part_2():
-    _, b, c, program = get_data()
+    _, _, _, program = get_data()
 
-    a = 8**(len(program) - 1)
-    while not run_and_check_program(a, b, c, program):
-        a += 1
+    a = find_a(0, program, 1)
     
     print(a)
 
