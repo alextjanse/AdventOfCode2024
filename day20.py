@@ -52,7 +52,7 @@ def manhattan_distance(p: tuple[int, int], q: tuple[int, int]) -> int:
     qx, qy = q
     return abs(px - qx) + abs(py - qy)
 
-def find_cheat_paths(distances, total_cheats, min_saved):
+def find_cheat_paths(distances: defaultdict[tuple[int, int], int], total_cheats: int, min_saved: int) -> int:
     '''Check all possible cheats by pairing all possible starting positions
     and ending positions, checking if the cheat distance is valid and if the
     time saved is enough.'''
