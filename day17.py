@@ -1,7 +1,8 @@
 from typing import Iterator
 
 
-def get_data() -> tuple[int, int, int, list[int]]:
+def get_data() -> tuple[list[int], int, int, int]:
+    '''Parse the data as a tuple of the register values and the program.'''
     with open('data/day17.txt', encoding='utf-8') as file:
         lines = file.read().splitlines()
         a = int(lines[0].split(': ')[1])
@@ -10,9 +11,10 @@ def get_data() -> tuple[int, int, int, list[int]]:
 
         program = [int(i) for i in lines[4].split(': ')[1].split(',')]
     
-    return a, b, c, program
+    return program, a, b, c
 
-def get_combo_operand(operand, a, b, c) -> int:
+def get_combo_operand(operand: int, a: int, b: int, c: int) -> int:
+    '''Return the combo operand depending on the operand value.'''
     if operand <= 3: return operand
     if operand == 4: return a
     if operand == 5: return b
@@ -20,7 +22,8 @@ def get_combo_operand(operand, a, b, c) -> int:
     
     raise Exception("Unknown operand")
 
-def run_program(a, b, c, program) -> list[int]:
+def run_program(program: list[int], a: int, b: int, c: int) -> list[int]:
+    '''Run the program and return the output.'''
     pointer = 0
     output = []
     
@@ -53,75 +56,78 @@ def run_program(a, b, c, program) -> list[int]:
     
     return output
 
-def solve_part_1() -> None:
-    output = run_program(*get_data())
-
-    print(','.join(map(str, output)))
-
-def run_and_check_program(a, b, c, program, depth) -> bool:
+def check_program(program: list[int], a: int, b: int, c: int, depth) -> bool:
+    '''Run the program and check whether the program outputs last
+    numbers of the program.'''
     pointer = 0
     output = []
 
-    expected_output = program[-depth:]
+    expected_output = program[-depth - 1:]
     
     while pointer < len(program):
-        try:
-            opcode = program[pointer]
-            operand = program[pointer + 1]
+        opcode = program[pointer]
+        operand = program[pointer + 1]
 
-            if opcode == 0: # adv
-                a = a // (2**get_combo_operand(operand, a, b, c))
-            elif opcode == 1: # bxl
-                b = b ^ operand
-            elif opcode == 2: # bst
-                b = get_combo_operand(operand, a, b, c) % 8
-            elif opcode == 3: # jnz
-                if a != 0:
-                    pointer = operand
-                    continue
-            elif opcode == 4: # bxc
-                b = b ^ c
-            elif opcode == 5: # out
-                x = get_combo_operand(operand, a, b, c) % 8
+        if opcode == 0: # adv
+            a = a // (2**get_combo_operand(operand, a, b, c))
+        elif opcode == 1: # bxl
+            b = b ^ operand
+        elif opcode == 2: # bst
+            b = get_combo_operand(operand, a, b, c) % 8
+        elif opcode == 3: # jnz
+            if a != 0:
+                pointer = operand
+                continue
+        elif opcode == 4: # bxc
+            b = b ^ c
+        elif opcode == 5: # out
+            x = get_combo_operand(operand, a, b, c) % 8
 
-                if expected_output[len(output)] != x:
-                    return False
-                
-                output.append(x)
-            elif opcode == 6: # bdv
-                b = a // (2**get_combo_operand(operand, a, b, c))
-            elif opcode == 7: # cdv
-                c = a // (2**get_combo_operand(operand, a, b, c))
-            else:
-                raise Exception("Unknown instruction")
+            # Check if the expected output is correct.
+            if expected_output[len(output)] != x:
+                return False
+            
+            output.append(x)
+        elif opcode == 6: # bdv
+            b = a // (2**get_combo_operand(operand, a, b, c))
+        elif opcode == 7: # cdv
+            c = a // (2**get_combo_operand(operand, a, b, c))
+        else:
+            raise Exception("Unknown instruction")
 
-            pointer += 2
-        except:
-            return False
+        pointer += 2
     
+    # Because we checked if the output values are correct,
+    # only check if the lengths are the same
     return len(output) == len(expected_output)
 
-def find_a(current_a, program, depth) -> Iterator[int]:
+def find_self_printing_a(program: list[int], current_a: int = 0, depth = 0) -> Iterator[int]:
+    '''Find the value for a, so that the program returns itself. The program
+    always contains a (0, 3) command, which shifts a 3 bits to the right. We
+    can start by checking the first 3 bits to see if it produces the last digit
+    and recursively work on a solution from there.'''
     if depth == len(program):
-        # Max depth, check if the current_a is correct
-        return current_a if run_and_check_program(current_a, 0, 0, program, depth) else None
+        return current_a
 
+    # Try all possible 3-bit numbers to put at the end of current_a
     for a_tail in range(8):
         a = (current_a << 3) | a_tail
-        if run_and_check_program(a, 0, 0, program, depth):
-            result = find_a(a, program, depth + 1)
+        if check_program(program, a, 0, 0, depth):
+            result = find_self_printing_a(program, a, depth + 1)
             if result is not None:
                 return result
     
+    # All possible tails have been checked, none worked
     return None
 
-def solve_part_2():
-    _, _, _, program = get_data()
-
-    a = find_a(0, program, 1)
-    
-    print(a)
-
 if __name__ == '__main__':
-    solve_part_1()
-    solve_part_2()
+    program, a, b, c = get_data()
+
+    # Solve part 1
+    output = run_program(program, a, b, c)
+    print(','.join(map(str, output)))
+
+    # Solve part 2
+    a = find_self_printing_a(program)
+
+    print(a)
